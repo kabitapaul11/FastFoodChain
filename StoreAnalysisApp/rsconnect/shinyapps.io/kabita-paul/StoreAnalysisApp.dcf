@@ -1,0 +1,12 @@
+name: StoreAnalysisApp
+title: StoreAnalysisApp
+username:
+account: kabita-paul
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 966937
+bundleId: 2132783
+url: https://kabita-paul.shinyapps.io/StoreAnalysisApp/
+when: 1559746125.02129
+asMultiple: FALSE
+asStatic: FALSE

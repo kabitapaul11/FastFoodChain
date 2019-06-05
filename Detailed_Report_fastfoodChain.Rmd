@@ -1,0 +1,230 @@
+---
+title: "Fast food chain Analysis - Technical Report"
+author: "Kabita Paul"
+date: "25/05/2019"
+output:
+  html_document:
+    code_folding: hide
+    fig_height: 5
+    fig_width: 8
+    highlight: tango
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE,  results="hide"}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+The fast food chain industry is growing more than ever before. Globalization and technology advancements have brought together different cuisines of the world. Also, drive thru and take away are gaining popularity in fast food industries due to busy schedules. Data is a key asset for food industries like any other business where data is used for both macro and granular analyses for different levels i.e. customer level, store level and so on. Food chain industries are now relying on data to find most popular dish, optimizing inventory and food storage, attracting new customers with discounts, providing customized offers for repetitive customers, optimizing menu prices and many more.
+
+This project performs concrete analysis on data available for a famous fast-food chain in USA across 47 locations and provides efficient and effective strategies to be taken by store manager to maximize profits.
+
+
+
+**Goal:**
+
+In this project, we will utilize the transaction data available for the fast food chain across different stores in north east USA. The primary motive of analyses is to maximize profit. However, this project aims to come up with effective business decisions by looking at trends and patterns in data. The most efficient way to find pattern is visualization. Having said that, this project will help to explore patterns hidden in the available dataset through effective visualization.
+
+Once patterns are discovered, and strategies are made based on fact, wise decision would be to implement strategies in one store and perform consistent process of experimentation before implementing those to other stores. Depending on success of that stores, the strategies could be applied to other stores. That way, it can save operation cost and maximize profit.
+
+In this analysis we will more focus on store level data. We will explore characteristics for each store, reveal patterns and trends. The goal is to maximize profit by increasing sales, and lowering operation cost and investory waste.
+
+
+- Primary Question: For each store, how sales can be increased? 
+- Sub Question 1: Which day of the week, most sales occur?
+- Sub Question 2: How the order amount varied over time?
+- Sub Question 3: What are the most popular menu items for each store?
+- Sub Question 4: Who are the regular customers and time of visit?
+- Sub Question 5: What are the peak hours for each day?
+- Sub Question 6: What are the associated menu items (association rule mining)?
+- Sub Question 7: In what stores sales are decreasing over time?
+
+
+**Data Characteristics**
+
+531,503 records
+
+columns:
+
+- order_id	
+- customer_id	
+- date_created	
+- year	
+- month	
+- item_no	
+- price	qty	
+- order_discounts_total	
+- line_discounts_total	
+- tax	
+- disctotal	
+- order_total	
+- gender	
+- location_no	
+- postalcode	
+- store_id   
+
+
+**Constraints and assumptions**
+
+- Menu items are encoded as numbers instead of food item names due to data privacy concerns. Better analysis could be done if it would have contained real name for food.
+
+- Few menu items are priced higher than usual, removed from analysis data.
+
+## Domain Problem Charactarization
+
+- Maximize profit
+- Increase sales
+- Minimize inventory waste
+- Retain existing/repititive customers
+- attract new customers
+
+## Data/operation abstraction design
+
+- Dataset: fastfood_dataset_challenge
+- 47 stores
+- 40,365 unique customers
+- 791 menu items
+
+
+ **fastfood chain data**
+ 
+```{r   warning=FALSE, message=FALSE}
+library("plotly")
+library("tidyverse")
+library("data.table")
+library("gridExtra")
+library("knitr")
+library("gganimate")
+library("maps")
+
+# Load athletes_events data 
+data <- read_csv("Data/fastfood_dataset_challenege.csv")
+
+glimpse(data)
+head(data)
+```
+
+## Encoding/Interaction design
+
+ 
+ **7. order total over time ** 
+ 
+```{r   warning=FALSE, message=FALSE}
+order_total_monthyear <- data %>%
+  mutate(store_id = as.character(store_id)) %>%
+  group_by(year, month, store_id) %>%
+  summarize(total= sum(order_total))%>%
+  arrange(desc(year, month))
+p<- ggplot(order_total_monthyear, aes(x= month, y=total, group= store_id, color = store_id))+
+  geom_line()
+p
+```
+
+```{r}
+library(zipcode)
+
+data(zipcode)
+us<-map_data('state')
+
+order_total_by_location <- data %>%
+  mutate(store_id = as.character(store_id)) %>%
+  mutate(zip = as.character(postalcode)) %>%
+  group_by(store_id, zip, location_no ) %>%
+  summarize(total = sum(order_total))
+
+
+order_total_by_location<- merge(order_total_by_location, zipcode, by='zip')
+us
+
+p <- ggplot(order_total_by_location,aes(longitude,latitude)) +
+  geom_polygon(data=us,aes(x=long,y=lat,group=group),color='gray',fill=NA,alpha=.35)+
+  geom_point(aes(size = total),color="darkblue",alpha=.5) +
+  xlim(-125,-65)+ylim(20,50)
+
+ggplotly(p)
+
+```
+
+**3. top 10 popular items **
+
+ 
+```{r   warning=FALSE, message=FALSE}
+order_total_items <- data %>%
+  mutate(item_no = as.character(item_no))  %>%
+  group_by(item_no, store_id) %>%
+  summarize(totalqty = sum(qty)) %>%
+  arrange(desc(totalqty))%>%
+  slice(1:10)
+order_total_items
+p<- ggplot(order_total_items, aes(x= item_no, y=totalqty))+
+  geom_col(fill= "blue")+
+  coord_flip()
+p
+```
+
+
+```{r}
+regular_customers <- data %>%
+    mutate(customer_id = as.character(customer_id))  %>%
+    group_by(customer_id, store_id, order_id) %>%
+    summarize(order_total = sum(order_total)) %>%
+    group_by(customer_id, store_id)  %>%
+    summarize(visit= n())%>%
+    arrange(desc(visit))
+regular_customers
+```
+
+
+ **Primary and Secondry Question Findings**
+ 
+ - lowest sales on Sunday, highest on Friday
+ - Top sold items : 1121, 1120, 820, 1060
+
+ 
+## Algorithmic design
+
+Validation is about whether one has built the right product, and verification is about whether one has built the product right. Application algorithm should carry out the visual encoding and interaction design. The performance of the system is significant component of the accessibility and the usability. Performance of the application was considered while creating the coding and system design. Tidiness and neatness of data coding effects the system performance and reproducibility. The variables which may slow down the application were created at the top of the application as a pre-processing portion of the system. Additionally, reproducibility (please see the  Github URL in Appendix) and readiness for the production were designed considering the user.
+
+
+## User evaluation
+
+- The evaluation of the system by human direct interaction is extremely complex task. Users may be biased and influenced by the experience, prior knowledge, and perspective. Also, cognitive ability may differ from person to person, which can bring about discord in judgment. Individuals may see different than one another, while one may see the cosmetics, others technical details.
+
+- Analytical and empirical techniques utilized by Human Computer Interaction (HCI) interacts with users via computers, which should; assess the functionality of the system that fulfills all of the functions requested by the user that defined in the phase of user requirements specification, analyze the system’s effect on the final users.
+
+## Future work
+
+- customers' income level and socio-economic situation of the location can be analysed.
+- menu item customization and pairing of items given the detailed menu data are provided.
+
+## Appendix
+
+- Please see the shiny app link:
+
+https://kabita-paul.shinyapps.io/StoreAnalysisApp/
+
+
+- Please see the blog link:
+
+https://elifdemirblog.netlify.com/post/120-years-of-olympics/
+
+- Please see the Github link:
+
+https://github.com/kabitapaul11/FastFoodChain/
+
+
+## References
+ 
+- Article: A nested model for visualization design and validation
+
+
+
+
