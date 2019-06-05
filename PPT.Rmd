@@ -1,0 +1,110 @@
+---
+title: "Fast food chain Analysis"
+reference_doc: Template.pptx
+author: Kabita Paul
+output:
+  slidy_presentation: default
+  beamer_presentation: default
+  powerpoint_presentation: default
+  ioslides_presentation: default
+  html_document: 
+      fig_width: 7 
+      fig_height: 2
+---
+
+```{r setup, include=FALSE , warning=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## INTRODUCTION
+
+- Dataset: fastfood_dataset_challenge
+- 47 stores
+- 40,365 unique customers
+- 791 menu items
+- Categorical Variables: order_id, customer_id, item_no, location_no, postalcode, store_id, gender
+- Numerical Variables: order_total, disctotal 
+- Reproducibility: Github repo
+- Blog
+
+```{r   warning=FALSE, message=FALSE, fig.width=8, fig.height= 4}
+library(imager)
+library("plotly")
+library("tidyverse")
+library("data.table")
+library("gridExtra")
+library("knitr")
+library("gganimate")
+library("maps")
+
+# Load athletes_events data 
+data <- read_csv("Data/fastfood_dataset_challenege.csv")
+# myimg <- load.image("Images/fast-food.png")
+# plot.new()
+# rasterImage(myimg,0,0,1,1)
+```
+
+## Domain Problem Charactarization
+
+- Maximize profit
+- Increase sales
+- Minimize inventory waste
+- Retain existing/repititive customers
+- attract new customers
+
+## Goal
+
+- **Primary Question: For each store, how sales can be increased?**
+
+- Sub Question 1: Which day of the week, most sales occur?
+- Sub Question 2: How the order amount varied over time?
+- Sub Question 3: What are the most popular menu items for each store?
+- Sub Question 4: Who are the regular customers and time of visit?
+- Sub Question 5: What are the peak hours for each day?
+- Sub Question 6: What are the associated menu items (association rule mining)?
+- Sub Question 7: In what stores sales are decreasing over time?
+
+
+
+## Has the number of number of sales changed over time?
+```{r   warning=FALSE, message=FALSE}
+order_total_monthyear <- data %>%
+  mutate(store_id = as.character(store_id)) %>%
+  group_by(year, month, store_id) %>%
+  summarize(total= sum(order_total))%>%
+  arrange(desc(year, month))
+p<- ggplot(order_total_monthyear, aes(x= month, y=total, group= store_id, color = store_id))+
+  geom_line()
+ggplotly(p)
+```
+
+
+
+## Shiny App
+
+https://kabita-paul.shinyapps.io/StoreAnalysisApp/
+
+## Future Work
+
+- customers' income level and socio-economic situation of the location can be analysed.
+- menu item customization and pairing of items given the detailed menu data are provided.
+
+## LINKS
+
+- Please see the shiny app link:
+
+https://kabita-paul.shinyapps.io/StoreAnalysisApp/
+
+- Please see the blog link:
+
+http://rpubs.com/kabitapaul11/fastfoodchain_analysis/
+
+- Please see the Github link:
+
+https://github.com/kabitapaul11/FastFoodChain/
+
+
+
+![](Images/thankyou.gif)
+
+
